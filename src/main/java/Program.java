@@ -139,33 +139,47 @@ public class Program {
 
     private static List<Produto> listarProdutosCadastrados() {
         ArrayList<Produto> listaProdutos = new ArrayList<>();
-        Scanner inputProdutos = new Scanner(System.in);
+        Scanner inputProdutos = new Scanner(System.in).useLocale(Locale.US);
         while (true) {
-            System.out.print("Digite o nome do produto que você deseja transportar: ");
-            String nomeProduto = inputProdutos.nextLine();
-            System.out.print("Digite a quantidade do produto: ");
-            int quantidade = inputProdutos.nextInt();
-            if (quantidade < 1) {
-                System.out.println("Você deve informar um número inteiro e maior que zero para a quantidade do produto");
-                menu();
-            }
-            System.out.print("Digite o peso do produto em quilos usando a vírgula (,) como casa decimal: ");
-            double pesoQuilo = inputProdutos.nextDouble();
-            if (pesoQuilo < 0) {
-                System.out.println("Você não pode informar um peso com valor negativo");
-                menu();
-            }
+            String nomeProduto = cadastrarNome(inputProdutos);
+            int quantidade = cadastrarQuantidade(inputProdutos);
+            double pesoQuilo = cadastrarPeso(inputProdutos);
             Produto novoProduto = new Produto(nomeProduto, quantidade, pesoQuilo);
             listaProdutos.add(novoProduto);
             System.out.println("Produto cadastrado com sucesso");
             System.out.println("Deseja cadastrar outro produto? (S) ou (N)");
-            String input = new Scanner(System.in).nextLine();
+            String input = new Scanner(System.in).nextLine().toUpperCase();
             if (input.equalsIgnoreCase("N")) {
                 break;
             }
             inputProdutos.nextLine();
         }
         return listaProdutos;
+    }
+
+    private static String cadastrarNome(Scanner inputProdutos) {
+        System.out.print("Digite o nome do produto que você deseja transportar: ");
+        return inputProdutos.nextLine();
+    }
+
+    private static double cadastrarPeso(Scanner inputProdutos) {
+        System.out.print("Digite o peso do produto em quilos usando o ponto final (.) como casa decimal: ");
+        double pesoQuilo = inputProdutos.nextDouble();
+        if (pesoQuilo < 0) {
+            System.out.println("Você não pode informar um peso com valor negativo");
+            menu();
+        }
+        return pesoQuilo;
+    }
+
+    private static int cadastrarQuantidade(Scanner inputProdutos) {
+        System.out.print("Digite a quantidade do produto: ");
+        int quantidade = inputProdutos.nextInt();
+        if (quantidade < 1) {
+            System.out.println("Você deve informar um número inteiro e maior que zero para a quantidade do produto");
+            menu();
+        }
+        return quantidade;
     }
 
     private static String getInputCidades() {
