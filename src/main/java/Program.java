@@ -1,4 +1,5 @@
 import entities.Caminhao;
+import entities.Produto;
 import enums.CaminhaoEnum;
 
 import java.util.*;
@@ -29,7 +30,7 @@ public class Program {
                 }
             }
         } catch (InputMismatchException e) {
-            System.out.println("Digite um número de 1 a 5");
+            System.out.println("Você informou um input inválido, retornando ao menu principal");
             menu();
         }
     }
@@ -93,16 +94,17 @@ public class Program {
     private static void opcao2() {
         try {
             String inputCidades = getInputCidades();
-            List<String> listaProdutos = listarProdutosCadastrados();
+            List<Produto> listaProdutos = listarProdutosCadastrados();
+            String listaNomesProdutos = listarNomesProdutos(listaProdutos);
+
             String[] listaInputNomesCidades = inputCidades.split("\\s*,\\s*");
             List<String> listaNomesCapitais = Arrays.asList(CSVReader.readCapitais().get(0)
                     .replaceAll("^\\[|]$", "")
                     .split("\\s*,\\s*"));
             List<Integer> listaDistanciaCidades = getListaDistanciaCidades(listaInputNomesCidades, listaNomesCapitais);
             int somaDistancias = listaDistanciaCidades.stream().mapToInt(Integer::intValue).sum();
-            String nomesProdutos = getProdutos(listaProdutos);
             System.out.println("de " + inputCidades + ", a distância a ser percorrida é de " + somaDistancias + "km," +
-                    " para transportes dos produtos " + nomesProdutos + "será necessário utilizar " + "" + ", de forma a" +
+                    " para transportes dos produtos " + listaNomesProdutos + " será necessário utilizar " + "" + ", de forma a" +
                     " resultar no menor custo de transporte por km rodado. O valor total do transporte dos itens é ");
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("A cidade informada não existe na lista");
@@ -110,12 +112,12 @@ public class Program {
         }
     }
 
-    private static String getProdutos(List<String> listaProdutos) {
-        ArrayList<String> listaNomesProdutos = new ArrayList<>();
-        for (String listaProduto : listaProdutos) {
-            listaNomesProdutos.add(listaProduto.split(",")[0]);
+    private static String listarNomesProdutos(List<Produto> listaProdutos) {
+        List<String> listaNomesProdutos = new ArrayList<>();
+        for (Produto produto: listaProdutos) {
+            listaNomesProdutos.add(produto.getNome());
         }
-        return listaNomesProdutos.toString().replaceAll("^\\[|]$", "");
+        return Arrays.toString(listaNomesProdutos.toArray()).replaceAll("^\\[|]$", "");
     }
 
     private static List<Integer> getListaDistanciaCidades(String[] listaInputNomesCidades, List<String> listaNomesCapitais) {
@@ -135,27 +137,41 @@ public class Program {
         return listaDistanciaCidades;
     }
 
-    private static List<String> listarProdutosCadastrados() {
-        System.out.println("Digite o nome do produto, quantidade e peso (em gramas) separados por vírgula ");
-        System.out.println("Exemplo: CELULAR, 20, 500");
-        System.out.println("Você pode parar de cadastrar os produtos a qualquer momento digitando PARAR");
-        List<String> listaProdutos = new ArrayList<>();
+    private static List<Produto> listarProdutosCadastrados() {
+        ArrayList<Produto> listaProdutos = new ArrayList<>();
         Scanner inputProdutos = new Scanner(System.in);
         while (true) {
-            String input = inputProdutos.nextLine();
-            if (input.equalsIgnoreCase("PARAR")) {
+            System.out.print("Digite o nome do produto que você deseja transportar: ");
+            String nomeProduto = inputProdutos.nextLine();
+            System.out.print("Digite a quantidade do produto: ");
+            int quantidade = inputProdutos.nextInt();
+            if (quantidade < 1) {
+                System.out.println("Você deve informar um número inteiro e maior que zero para a quantidade do produto");
+                menu();
+            }
+            System.out.print("Digite o peso do produto em quilos usando a vírgula (,) como casa decimal: ");
+            double pesoQuilo = inputProdutos.nextDouble();
+            if (pesoQuilo < 0) {
+                System.out.println("Você não pode informar um peso com valor negativo");
+                menu();
+            }
+            Produto novoProduto = new Produto(nomeProduto, quantidade, pesoQuilo);
+            listaProdutos.add(novoProduto);
+            System.out.println("Produto cadastrado com sucesso");
+            System.out.println("Deseja cadastrar outro produto? (S) ou (N)");
+            String input = new Scanner(System.in).nextLine();
+            if (input.equalsIgnoreCase("N")) {
                 break;
             }
-            listaProdutos.add(input);
+            inputProdutos.nextLine();
         }
-        listaProdutos.removeAll(List.of(""));
         return listaProdutos;
     }
 
     private static String getInputCidades() {
         System.out.println("Digite o nome das cidades que você deseja ir separadas por vírgula: ");
         System.out.println("Exemplo: PORTO ALEGRE, CURITIBA, SAO PAULO");
-        return new Scanner(System.in).nextLine();
+        return new Scanner(System.in).nextLine().toUpperCase();
     }
 
     private static void opcao3() {
