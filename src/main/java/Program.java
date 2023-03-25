@@ -97,18 +97,17 @@ public class Program {
     private static void opcao2() {
         try {
             String inputCidades = getInputCidades();
+            String[] listaInputNomesCidades = inputCidades.split("\\s*,\\s*");
+            List<String> listaNomesCapitais = Arrays.asList(CSVReader.readCapitais().get(0)
+                    .replaceAll("^\\[|]$", "")
+                    .split("\\s*,\\s*"));
+            List<Integer> listaDistanciaCidades = getListaDistanciaCidades(listaInputNomesCidades, listaNomesCapitais);
+
             List<Produto> listaProdutos = listarProdutosCadastrados();
             String listaNomesProdutos = listarNomesProdutos(listaProdutos);
             double pesoProdutos = calcularPesoTotal(listaProdutos);
             List<Integer> listaPortesCaminhoes = calcularPorteCaminhoes(pesoProdutos);
             Integer quantidadeProdutos = somarQuantidadeProdutos(listaProdutos);
-
-            String[] listaInputNomesCidades = inputCidades.split("\\s*,\\s*");
-            List<String> listaNomesCapitais = Arrays.asList(CSVReader.readCapitais().get(0)
-                    .replaceAll("^\\[|]$", "")
-                    .split("\\s*,\\s*"));
-
-            List<Integer> listaDistanciaCidades = getListaDistanciaCidades(listaInputNomesCidades, listaNomesCapitais);
             int somaDistancias = listaDistanciaCidades.stream().mapToInt(Integer::intValue).sum();
             double valorTotalViagem = getValorTotalViagem(listaPortesCaminhoes, somaDistancias);
             double valorUnitarioMedio = valorTotalViagem / quantidadeProdutos;
