@@ -1,10 +1,13 @@
 import entities.Caminhao;
 import entities.Produto;
+import entities.Viagem;
 import enums.CaminhaoEnum;
 
 import java.util.*;
 
 public class Program {
+
+    static List<Viagem> listaViagens = new ArrayList<>();
 
     public static void main(String[] args) {
         menu();
@@ -96,25 +99,103 @@ public class Program {
             String inputCidades = getInputCidades();
             List<Produto> listaProdutos = listarProdutosCadastrados();
             String listaNomesProdutos = listarNomesProdutos(listaProdutos);
+            double pesoProdutos = calcularPesoTotal(listaProdutos);
+            List<Integer> listaPortesCaminhoes = calcularPorteCaminhoes(pesoProdutos);
+            Integer quantidadeProdutos = somarQuantidadeProdutos(listaProdutos);
 
             String[] listaInputNomesCidades = inputCidades.split("\\s*,\\s*");
             List<String> listaNomesCapitais = Arrays.asList(CSVReader.readCapitais().get(0)
                     .replaceAll("^\\[|]$", "")
                     .split("\\s*,\\s*"));
+
             List<Integer> listaDistanciaCidades = getListaDistanciaCidades(listaInputNomesCidades, listaNomesCapitais);
             int somaDistancias = listaDistanciaCidades.stream().mapToInt(Integer::intValue).sum();
-            System.out.println("de " + inputCidades + ", a distância a ser percorrida é de " + somaDistancias + "km," +
-                    " para transportes dos produtos " + listaNomesProdutos + " será necessário utilizar " + "" + ", de forma a" +
-                    " resultar no menor custo de transporte por km rodado. O valor total do transporte dos itens é ");
+            double valorTotalViagem = getValorTotalViagem(listaPortesCaminhoes, somaDistancias);
+            double valorUnitarioMedio = valorTotalViagem / quantidadeProdutos;
+            Viagem novaViagem = cadastrarViagem(inputCidades, listaNomesProdutos, listaPortesCaminhoes, somaDistancias, valorTotalViagem, valorUnitarioMedio);
+            imprimirResultadoViagem(novaViagem);
+            listaViagens.add(novaViagem);
+            menu();
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println("A cidade informada não existe na lista");
             menu();
         }
     }
 
+    private static Viagem cadastrarViagem(String inputCidades, String listaNomesProdutos, List<Integer> listaPortesCaminhoes,
+                                          int somaDistancias, double valorTotalViagem, double valorUnitarioMedio) {
+        return new Viagem(inputCidades, somaDistancias, listaNomesProdutos, listaPortesCaminhoes, valorTotalViagem, valorUnitarioMedio);
+    }
+
+    private static void imprimirResultadoViagem(Viagem viagem) {
+        System.out.println();
+        System.out.println("De " + viagem.getNomesCidades() + ", a distância a ser percorrida é de " + viagem.getDistanciaTotal() + "km");
+        System.out.println("Para transportes dos produtos " + viagem.getNomesProdutos() + " será necessário utilizar: ");
+        System.out.println(viagem.getQuantidadePortesCaminhoes().get(0) + " " + checarQuantidadePequenoPorte(viagem.getQuantidadePortesCaminhoes()) + " de porte PEQUENO");
+        System.out.println(viagem.getQuantidadePortesCaminhoes().get(1) + " de porte MÉDIO");
+        System.out.println(viagem.getQuantidadePortesCaminhoes().get(2) + " de porte GRANDE");
+        System.out.println("O valor total do transporte dos itens é R$ " + viagem.getValorTotalViagem() +
+                ", sendo R$ " + String.format("%.2f", viagem.getValorUnitarioMedio()) + " é o custo unitário médio");
+    }
+
+    private static Integer somarQuantidadeProdutos(List<Produto> listaProdutos) {
+        List<Integer> listaQuantidadeProdutos = new ArrayList<>();
+        for (Produto listaProduto : listaProdutos) {
+            listaQuantidadeProdutos.add(listaProduto.getQuantidade());
+        }
+        return listaQuantidadeProdutos.stream().mapToInt(Integer::intValue).sum();
+    }
+
+    private static double getValorTotalViagem(List<Integer> listaPortesCaminhoes, int somaDistancias) {
+        double valorTotalPequenoPorte = somaDistancias * listaPortesCaminhoes.get(0) * CaminhaoEnum.PEQUENO_PORTE.getValor();
+        double valorTotalMedioPorte = somaDistancias * listaPortesCaminhoes.get(1) * CaminhaoEnum.MEDIO_PORTE.getValor();
+        double valorTotalGrandePorte = somaDistancias * listaPortesCaminhoes.get(2) * CaminhaoEnum.GRANDE_PORTE.getValor();
+        return valorTotalPequenoPorte + valorTotalMedioPorte + valorTotalGrandePorte;
+    }
+
+    private static String checarQuantidadePequenoPorte(List<Integer> listaPortesCaminhoes) {
+        if (listaPortesCaminhoes.get(0) == 1) {
+            return "caminhão";
+        } else {
+            return "caminhões";
+        }
+    }
+
+    private static List<Integer> calcularPorteCaminhoes(double pesoProdutos) {
+        List<Integer> listaPortesCaminhoes = new ArrayList<>();
+        int quantidadePortePequeno = 0;
+        int quantidadePorteMedio = 0;
+        int quantidadePorteGrande = 0;
+
+        while (pesoProdutos > 0) {
+            if (pesoProdutos > 8000) {
+                quantidadePorteGrande += 1;
+                pesoProdutos -= 10000;
+            } else if (pesoProdutos > 2000) {
+                quantidadePorteMedio += 1;
+                pesoProdutos -= 4000;
+            } else {
+                quantidadePortePequeno += 1;
+                pesoProdutos -= 1000;
+            }
+        }
+        listaPortesCaminhoes.add(quantidadePortePequeno);
+        listaPortesCaminhoes.add(quantidadePorteMedio);
+        listaPortesCaminhoes.add(quantidadePorteGrande);
+        return listaPortesCaminhoes;
+    }
+
+    private static double calcularPesoTotal(List<Produto> listaProdutos) {
+        List<Double> listaPesosProdutos = new ArrayList<>();
+        for (Produto listaProduto : listaProdutos) {
+            listaPesosProdutos.add(listaProduto.getPeso() * listaProduto.getQuantidade());
+        }
+        return listaPesosProdutos.stream().mapToDouble(Double::doubleValue).sum();
+    }
+
     private static String listarNomesProdutos(List<Produto> listaProdutos) {
         List<String> listaNomesProdutos = new ArrayList<>();
-        for (Produto produto: listaProdutos) {
+        for (Produto produto : listaProdutos) {
             listaNomesProdutos.add(produto.getNome());
         }
         return Arrays.toString(listaNomesProdutos.toArray()).replaceAll("^\\[|]$", "");
@@ -189,7 +270,16 @@ public class Program {
     }
 
     private static void opcao3() {
-        menu();
+        if (listaViagens.size() == 0) {
+            System.out.println("Nenhuma viagem foi cadastrada ainda");
+            menu();
+        } else {
+            for (Viagem listaViagem : listaViagens) {
+                imprimirResultadoViagem(listaViagem);
+            }
+            menu();
+        }
+
     }
 
 }
